@@ -228,4 +228,3 @@ for i in range(30):
     print(".", end="", flush=True)
 
 print(f"\n\n🎉 [접속 주소]: {found_url}")
-!streamlit run app.py --server.address=localhost --server.enableCORS=false --server.enableXsrfProtection=false &
