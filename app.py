@@ -1,27 +1,7 @@
-import os
-import time
-import re
-import subprocess
-
-# --- [0. 필수 프로그램 설치] (런타임 초기화 후에는 꼭 필요합니다!) ---
-print("📦 필수 프로그램(Streamlit, Pandas) 설치 중... (약 30초 소요)")
-os.system("pip install -q streamlit pandas")
-os.system("wget -q -O cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64")
-os.system("chmod +x cloudflared")
-
-# --- [1. 꼬인 연결 풀기] ---
-print("🧹 기존 연결 정리 중...")
-os.system("pkill -9 cloudflared")
-os.system("pkill -9 streamlit")
-os.system("rm -f tunnel.log")
-
-# --- [2. 앱 코드 생성] ---
-app_code = """
 import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="반려견 영양 연구소 계산기 v3.4", layout="wide")
-
 st.title("🐶 반려견 영양 연구소 [AAFCO 생식 계산기 v3.4]")
 st.info("💡 전문가용 맞춤형 영양 컨설팅 & 레시피 분석 시스템")
 
@@ -75,7 +55,7 @@ db_data = [
     {"재료명": "해바라기씨 (Sunflower Seed)", "category": "veggie", "bone_pct": 0, "칼로리": 559, "단백질": 30.2, "지방": 49.0, "칼슘": 46, "인": 1230, "철": 8.82, "아연": 7.81, "구리": 1.34, "망간": 4.54, "비타민A": 3.3, "비타민D": 0, "비타민E": 2.18, "나트륨": 7},
     {"재료명": "굴 (Oyster)", "category": "veggie", "bone_pct": 0, "칼로리": 68, "단백질": 7.67, "지방": 2.68, "칼슘": 49, "인": 151, "철": 7.28, "아연": 98.9, "구리": 4.85, "망간": 0.45, "비타민A": 326, "비타민D": 1, "비타민E": 0.92, "나트륨": 122},
     {"재료명": "블루베리 (Blueberry)", "category": "veggie", "bone_pct": 0, "칼로리": 57, "단백질": 0.74, "지방": 0.33, "칼슘": 6, "인": 12, "철": 0.28, "아연": 0.06, "구리": 1.6, "망간": 0.262, "비타민A": 54, "비타민D": 0, "비타민E": 0.57, "나트륨": 1},
-    # 야채 퓨레 9종 (5.0에서 추가 - USDA 기준, 100g당)
+    # 야채 퓨레 9종 (USDA 기준, 100g당)
     {"재료명": "브로콜리 퓨레 (Broccoli)", "category": "veggie", "bone_pct": 0, "칼로리": 34, "단백질": 2.82, "지방": 0.37, "칼슘": 47, "인": 66, "철": 0.73, "아연": 0.41, "구리": 0.049, "망간": 0.21, "비타민A": 623, "비타민D": 0, "비타민E": 0.78, "나트륨": 33},
     {"재료명": "토마토 퓨레 (Tomato)", "category": "veggie", "bone_pct": 0, "칼로리": 18, "단백질": 0.88, "지방": 0.2, "칼슘": 10, "인": 24, "철": 0.27, "아연": 0.17, "구리": 0.059, "망간": 0.114, "비타민A": 833, "비타민D": 0, "비타민E": 0.54, "나트륨": 5},
     {"재료명": "우엉 퓨레 (Burdock Root)", "category": "veggie", "bone_pct": 0, "칼로리": 72, "단백질": 1.53, "지방": 0.15, "칼슘": 41, "인": 51, "철": 0.8, "아연": 0.33, "구리": 0.08, "망간": 0.23, "비타민A": 0, "비타민D": 0, "비타민E": 0.4, "나트륨": 5},
@@ -98,16 +78,16 @@ with col1:
         "1.0: 체중 감량이 필요한 성견 (다이어트)": 1.0,
         "1.2: 중성화 성견 · 매우 낮은 활동량": 1.2,
         "1.4: 중성화 성견 · 낮은 활동량 / 비만 경향": 1.4,
-        "1.6: 중성화 성견 · 보통 활동량 (기본값) ⭐": 1.6,
+        "1.6: 중성화 성견 · 보통 활동량 (기본값)": 1.6,
         "1.8: 비중성화 성견 · 보통 활동량": 1.8,
-        "2.0: 매우 활동적인 성견 / 야외·훈련량 많음": 2.0,
-        "3.0: 성장기 강아지 (퍼피)": 3.0
+        "2.0: 매우 활동적인 성견 / 야외 훈련량 많음": 2.0,
+        "3.0: 성장기 강아지 (퍼피)": 3.0,
     }
 
     selected_label = st.selectbox(
         "강아지의 현재 상태를 선택해 주세요!",
         options=list(der_options.keys()),
-        index=3
+        index=3,
     )
 
     activity = der_options[selected_label]
@@ -162,7 +142,7 @@ if selected:
             else:
                 mass_breakdown["veggie"] += grams
 
-    # --- 레시피 다운로드 & PDF 안내 ---
+    # --- 레시피 저장 ---
     st.subheader("💾 레시피 저장 및 고객 발송")
     c_btn1, c_btn2 = st.columns(2)
 
@@ -178,15 +158,13 @@ if selected:
             )
     with c_btn2:
         with st.expander("🖨️ PDF로 저장해서 고객에게 보내려면?"):
-            st.markdown(
-"1. 키보드에서 **`Ctrl + P`** (맥북은 `Command + P`)를 누르세요.\n"
-"2. 인쇄 설정 창이 뜨면 **[대상(프린터)]**를 **'PDF로 저장'**으로 바꾸세요.\n"
-"3. **[저장]** 버튼을 누르면 이 화면 그대로 예쁜 리포트가 만들어집니다!"
-            )
+            st.write("1. Ctrl + P (맥북은 Command + P) 를 누르세요.")
+            st.write("2. 인쇄 설정 창에서 대상(프린터)를 PDF로 저장 으로 바꾸세요.")
+            st.write("3. 저장 버튼을 누르면 리포트가 만들어집니다.")
 
     st.divider()
 
-    # --- 분석 결과 화면 ---
+    # --- 분석 결과 ---
     c1, c2 = st.columns([1, 2])
     with c1:
         st.subheader("⚖️ 식단 비율")
@@ -198,62 +176,53 @@ if selected:
             pct_organ  = (mass_breakdown["organ"]        / total_grams) * 100
             pct_veggie = (mass_breakdown["veggie"]       / total_grams) * 100
 
-            st.write(f"🦴 **뼈 ({pct_bone:.1f}%)** | 목표 12%")
+            st.write(f"뼈 ({pct_bone:.1f}%) | 목표 12%")
             st.progress(min(pct_bone / 20, 1.0))
-            st.write(f"🥩 **살코기 ({pct_meat:.1f}%)** | 목표 60~70%")
+            st.write(f"살코기 ({pct_meat:.1f}%) | 목표 60~70%")
             st.progress(min(pct_meat / 100, 1.0))
-            st.write(f"🫀 **내장 ({pct_organ:.1f}%)** | 목표 10~25%")
+            st.write(f"내장 ({pct_organ:.1f}%) | 목표 10~25%")
             st.progress(min(pct_organ / 40, 1.0))
-            st.write(f"🥦 **야채 ({pct_veggie:.1f}%)** | 목표 5~10%")
+            st.write(f"야채 ({pct_veggie:.1f}%) | 목표 5~10%")
             st.progress(min(pct_veggie / 20, 1.0))
 
     with c2:
         st.subheader("📊 AAFCO 영양 분석")
-        res_data = []
         if total_kcal > 0:
             kcal_ratio = (total_kcal / der) * 100
             st.progress(min(kcal_ratio / 100, 1.0), text=f"칼로리 충족률: {kcal_ratio:.1f}%")
 
+            res_data = []
             for nutri, std in aafco_standards.items():
                 val_1000 = (total_stats[nutri] / total_kcal) * 1000
                 min_v, max_v = std["min"], std["max"]
-                status = "✅ 적합"
+                status = "적합"
                 if val_1000 < min_v:
-                    status = f"❌ 부족 (최소 {min_v})"
+                    status = f"부족 (최소 {min_v})"
                 elif max_v and val_1000 > max_v:
-                    status = f"⚠️ 과잉 (최대 {max_v})"
-                res_data.append({"영양소": nutri, "현재(1000kcal당)": f"{val_1000:.2f}", "AAFCO 기준": f"{min_v}~{max_v if max_v else ''}", "판정": status})
+                    status = f"과잉 (최대 {max_v})"
+                res_data.append({
+                    "영양소": nutri,
+                    "현재(1000kcal당)": f"{val_1000:.2f}",
+                    "AAFCO 기준": f"{min_v}~{max_v if max_v else ''}",
+                    "판정": status,
+                })
 
             res_df = pd.DataFrame(res_data)
+
             def color_status(val):
-                return f'color: {"green" if "적합" in val else "red" if "부족" in val else "orange"}; font-weight: bold'
+                if "적합" in str(val):
+                    return "color: green; font-weight: bold"
+                elif "부족" in str(val):
+                    return "color: red; font-weight: bold"
+                else:
+                    return "color: orange; font-weight: bold"
+
             st.dataframe(res_df.style.map(color_status, subset=["판정"]), use_container_width=True)
 
-            ca, p = total_stats["칼슘(mg)"], total_stats["인(mg)"]
+            ca = total_stats["칼슘(mg)"]
+            p  = total_stats["인(mg)"]
             if p > 0:
-                ratio = ca / p
-                st.info(f"🦴 **Ca:P 비율 = {ratio:.2f} : 1** (권장 1.1~2 : 1)")
+                st.info(f"Ca:P 비율 = {ca/p:.2f} : 1  (권장 1.1~2 : 1)")
 
 else:
     st.info("재료를 선택하면 분석 결과가 나타납니다.")
-"""
-
-with open("app.py", "w", encoding="utf-8") as f:
-    f.write(app_code.strip())
-
-# --- [3. 실행 및 주소 자동 찾기] ---
-print("🚀 [반려견 영양 연구소 v3.4] 가동 시작! (잠시 후 링크가 뜹니다)")
-os.system("nohup ./cloudflared tunnel --url http://localhost:8501 > tunnel.log 2>&1 &")
-
-found_url = None
-for i in range(30):
-    time.sleep(1)
-    if os.path.exists("tunnel.log"):
-        with open("tunnel.log", "r") as f:
-            match = re.search(r"https://[\w-]+\.trycloudflare\.com", f.read())
-            if match:
-                found_url = match.group(0)
-                break
-    print(".", end="", flush=True)
-
-print(f"\n\n🎉 [접속 주소]: {found_url}")
