@@ -192,8 +192,7 @@ if selected:
     with c2:
         st.subheader("📊 AAFCO 영양 분석")
         if total_kcal > 0:
- # ========== 칼로리 표시 추가 ==========
-        kcal_pct = (total_kcal / der) * 100
+            kcal_pct = (total_kcal / der) * 100
         
         kcal_col1, kcal_col2, kcal_col3 = st.columns(3)
         
