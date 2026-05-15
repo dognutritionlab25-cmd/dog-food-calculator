@@ -192,8 +192,27 @@ if selected:
     with c2:
         st.subheader("📊 AAFCO 영양 분석")
         if total_kcal > 0:
-            kcal_ratio = (total_kcal / der) * 100
-            st.progress(min(kcal_ratio / 100, 1.0), text=f"칼로리 충족률: {kcal_ratio:.1f}%")
+ # ========== 칼로리 표시 추가 ==========
+        kcal_pct = (total_kcal / der) * 100
+        
+        kcal_col1, kcal_col2, kcal_col3 = st.columns(3)
+        
+        with kcal_col1:
+            st.metric("🔥 섭취 칼로리", f"{total_kcal:.0f} kcal")
+        
+        with kcal_col2:
+            st.metric("🎯 목표 칼로리", f"{der:.0f} kcal")
+        
+        with kcal_col3:
+            delta_kcal = total_kcal - der
+            st.metric(
+                "📈 차이", 
+                f"{delta_kcal:+.0f} kcal",
+                delta=f"{kcal_pct:.1f}% 충족",
+                delta_color="normal" if abs(delta_kcal) < 50 else ("inverse" if delta_kcal > 0 else "off")
+            )
+        
+        st.progress(min(kcal_pct / 100, 1.0), text=f"칼로리 충족률: {kcal_pct:.1f}%")
 
             res_data = []
             for nutri, std in aafco_standards.items():
