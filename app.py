@@ -214,7 +214,7 @@ if selected:
         st.progress(min(kcal_pct / 100, 1.0), text=f"칼로리 충족률: {kcal_pct:.1f}%")
 
                 res_data = []
-            for nutri, std in aafco_standards.items():
+                for nutri, std in aafco_standards.items():
                 val_1000 = (total_stats[nutri] / total_kcal) * 1000
                 min_v, max_v = std["min"], std["max"]
                 status = "적합"
